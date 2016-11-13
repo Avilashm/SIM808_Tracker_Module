@@ -6,8 +6,6 @@
 #define TXD BIT2
 
 
-//All credit to http://longhornengineer.com/code/MSP430/UART/ for init and uart handling
-
 volatile unsigned int tx_flag;			//Mailbox Flag for the tx_char.
 volatile unsigned char tx_char;			//This char is the most current char to go into the UART
 volatile unsigned int rx_flag;			//Mailbox Flag for the rx_char.
