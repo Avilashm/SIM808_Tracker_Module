@@ -4,9 +4,9 @@ date_default_timezone_set("Asia/Kolkata");
 $GPGGA= (isset($_GET['GPGGA']) ? $_GET['GPGGA'] : null);
 
 $servername = "localhost"; 
-$username = "root";
-$password = "";
-$db = "trackerdb";
+$username = "thingsdataroot";
+$password = "pa1303092$";
+$db = "thingsdata";
 
 $conn = new mysqli($servername, $username, $password,$db);
 
@@ -39,9 +39,8 @@ $y_new = (string)$y_new;
 //****************************************************************************************************************************************
 $x = $x_new;
 $y = $y_new;
-echo $x, "<br>".$y;
-$x_new = $x_new."-".$xD;
-$y_new = $y_new."-".$yD;
+$x = $x."-".$xD;
+$y = $y."-".$yD;
 //Function to check if (x, y) belongs to region
 
 /*$jsonItem=array();
@@ -66,9 +65,9 @@ $myfile = fopen("data.json", "r");
 $decodedjson = fread($myfile,filesize("data.json"));
 fclose($myfile);
 //echo $decodedjson;
-$json = substr($decodedjson,1,105);  //Removing Sqaure brackets
+$json = substr($decodedjson,1,145);  //Removing Sqaure brackets
 $result = json_decode($json, true);	 //Decoding and parsing JSON
-var_dump($result);
+//var_dump($result);
 $x1 =  $result['x1'];
 $x2 =  $result['x2'];
 $x3 =  $result['x3'];
@@ -78,44 +77,41 @@ $y2 =  $result['y2'];
 $y3 =  $result['y3'];
 $y4 =  $result['y4'];
 $phno = $result['phno.'];
-echo $result['x1'];
-echo "chutiyapa",$x1,$x2,$x3,$x4,$y1,$y2,$y3,$y4;
 
+//echo decodedjson = $decodedjson.'<br>';
+//echo $x.'<br>';
+//echo $y.'<br>';
 //****************************************************************Checks current Device Status*****************************************************************
 
 	$x_in_region = 0;
 	$y_in_region = 0;
-	//echo "I'm here";
-	if (($x < $x1 || $x < $x2 || $x < $x3 || $x < $x4 ) && ($x > $x1 || $x > $x2 || $x > $x3 || $x > $x4))
-	{
-		echo "1";
-	    $x_in_region = 1;
-		echo "x_in_region = ". $x_in_region."<br>" ;
-	}
-	if (($y < $y1 || $y < $y2 || $y < $y3 || $y < $y4 ) && ($y > $y1 || $y > $y2 || $y > $y3 || $y > $y4))
-	{	echo "2";
-	    $y_in_region = 1;
-			echo " y_in_region = ". $y_in_region."<br>" ;
-	}
 	
-	//echo $x_in_region,$y_in_region;
+	if (($x <= $x1 || $x <= $x2 || $x <= $x3 || $x <= $x4 ) && ($x >= $x1 || $x >= $x2 || $x >= $x3 || $x >= $x4))
+	{
+	    $x_in_region = 1;
+		//echo "x_in_region = ". $x_in_region."<br>" ;
+	}
+	if (($y <= $y1 || $y <= $y2 || $y <= $y3 || $y <= $y4 ) && ($y >= $y1 || $y >= $y2 || $y >= $y3 || $y >= $y4))
+	{
+	    $y_in_region = 1;
+		//echo " y_in_region = ". $y_in_region."<br>" ;
+	}
 	
 	if ($x_in_region == 1 && $y_in_region == 1)
-	{  	
-		echo "3";
+	{  
 		$current_pos = 0;  //Already in region
-		echo "Current_pos = ".$current_pos."<br>" ;
+		//echo "Current_pos = ".$current_pos."<br>" ;
 	}
 	else
-	{	echo "<br>4<br>	";
+	{
 	   $current_pos = 1;	//Currently out of region
-	   echo "Current_pos = ".$current_pos."<br>" ;
+	  // echo "Current_pos = ".$current_pos."<br>" ;
     }	
-
+//echo $current_pos . '<br>';
 	//$current_pos = 0;
 	
 //*************************************************************************************************************************************************************
-$sql = "SELECT status FROM Log ORDER BY reg_date DESC LIMIT 1";			//Selects The last entered value
+$sql = "SELECT status FROM log ORDER BY reg_date DESC LIMIT 1";			//Selects The last entered value
 if (mysqli_query($conn, $sql)) {
    // echo "selected Top";
 } else {
@@ -140,7 +136,7 @@ if (mysqli_query($conn, $sql)) {
 		$msg_string = "\$No changeZ";									//When Device has the same location status as earlier.
 	}
 
-$sql = "SELECT * FROM Log ORDER BY reg_date ASC"; 			//Re- Ordering the table
+$sql = "SELECT * FROM log ORDER BY reg_date ASC"; 			//Re- Ordering the table
 
 if (mysqli_query($conn, $sql)) {
     //echo "Value Inserted";
@@ -162,4 +158,3 @@ if (mysqli_query($conn, $sql)) {
 else echo "\$Invalid StringZ";			//Fires when recieves an invlaid String 
 
 ?>
-
