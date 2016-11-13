@@ -4,8 +4,8 @@ date_default_timezone_set("Asia/Kolkata");
 $GPGGA= (isset($_GET['GPGGA']) ? $_GET['GPGGA'] : null);
 
 $servername = "localhost"; 
-$username = "thingsdataroot";
-$password = "pa1303092$";
+$username = "t********aroot";
+$password = "pa******2$";
 $db = "thingsdata";
 
 $conn = new mysqli($servername, $username, $password,$db);
