@@ -15,7 +15,7 @@ char server_resp[100];
 char c;
 char mob_no[16];
 char msg[75];
-int count_ISR;
+int count_ISR = 0;
 
 void uart_init(void)
 {
@@ -216,7 +216,8 @@ int main(void)
     _delay_cycles(30*16000000);
     
     										
-    WDTCTL = WDTPW + ~WDTHOLD; 				// Releasing The WatchDog Timer.
+    WDTCTL |= WDTPW;
+    WDTCTL &= ~WDTHOLD; 				// Releasing The WatchDog Timer.
 	WDTCTL = WDTPW + WDTCONFIG1;			// Configure and Clear Watchdog Timer.
     WDTCTL = WDTPW + WDTTMSEL ; 			// Puts in interval time mode
     IE1 |= WDTIE;               	        // Enable WDT interrupt  	
@@ -224,9 +225,11 @@ int main(void)
 
     while (1)
     {   WDTCTL = WDTPW + WDTCONFIG1;
+        count_ISR = 0;
     	get_gps();
     	to_from_server();
     	WDTCTL = WDTPW + WDTCONFIG1;
+        count_ISR = 0;
     	send_sms();
     	_delay_cycles(1*16000000);
     }
