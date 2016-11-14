@@ -154,7 +154,7 @@ void to_from_server (void){
     uart_puts((char *)"AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"\r");
     _delay_cycles(1*16000000);
 
-    uart_puts((char *)"AT+SAPBR=3,1,\"APN\",\"airtelgprs.com\"\r");
+    uart_puts((char *)"AT+SAPBR=3,1,\"APN\",\"internet\"\r");
     _delay_cycles(1*16000000);
 
     uart_puts((char *)"AT+SAPBR=1,1\r");
@@ -163,7 +163,7 @@ void to_from_server (void){
     uart_puts((char *)"AT+HTTPINIT\r");
     _delay_cycles(1*16000000);
 
-    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://bb106509.ngrok.io/Tracker/action2.php?GPGGA=");
+    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://77140a25.ngrok.io/Tracker/action2.php?GPGGA=");
     uart_puts((char *)gps_string);
     uart_puts((char *)"\"\r");
     _delay_cycles(1*16000000);
@@ -244,7 +244,7 @@ __interrupt void watchdog_timer(void) {
 	if(count_ISR >= 75) 
 	    {  
 		   WDTCTL = WDTCTL;
-     	}
+        	}
 
 }
 #pragma vector = USCIAB0TX_VECTOR		//UART TX USCI Interrupt
