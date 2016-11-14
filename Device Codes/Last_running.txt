@@ -4,7 +4,7 @@
 #define LED BIT0
 #define RXD BIT1
 #define TXD BIT2
-
+#define WDTCONFIG1 = (WDTCNTCL|WDTSSEL|WDTIS1) 
 
 volatile unsigned int tx_flag;			//Mailbox Flag for the tx_char.
 volatile unsigned char tx_char;			//This char is the most current char to go into the UART
@@ -199,7 +199,8 @@ void to_from_server (void){
 
 int main(void)
 {
-    WDTCTL = WDTPW + WDTHOLD; 			//Stop WDT
+    // WDTCTL = WDTPW + WDTHOLD; 			//Stop WDT      ******// Releasing The WatchDog Timer.
+    IE1 |= WDTIE;                       // Enable WDT interrupt  	
     BCSCTL1 = CALBC1_8MHZ; 				//Set DCO to 8Mhz
     DCOCTL = CALDCO_8MHZ; 				//Set DCO to 8Mhz
 
@@ -225,6 +226,13 @@ int main(void)
 
 }
 
+#pragma vector=WDT_VECTOR  
+__interrupt void watchdog_timer(void) {   
+
+
+
+
+}
 #pragma vector = USCIAB0TX_VECTOR		//UART TX USCI Interrupt
 __interrupt void USCI0TX_ISR(void)
 {

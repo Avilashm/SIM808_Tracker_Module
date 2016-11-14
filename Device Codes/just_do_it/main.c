@@ -4,9 +4,7 @@
 #define LED BIT0
 #define RXD BIT1
 #define TXD BIT2
-
-
-//All credit to http://longhornengineer.com/code/MSP430/UART/ for init and uart handling
+#define WDTCONFIG1 = (WDTCNTCL|WDTSSEL|WDTIS1) 		//Clearing Mode
 
 volatile unsigned int tx_flag;			//Mailbox Flag for the tx_char.
 volatile unsigned char tx_char;			//This char is the most current char to go into the UART
@@ -17,10 +15,7 @@ char server_resp[100];
 char c;
 char mob_no[16];
 char msg[75];
-unsigned int execute = 0;
-
-void ConfigTimerA2(void);
-
+int count_ISR;
 
 void uart_init(void)
 {
@@ -159,7 +154,7 @@ void to_from_server (void){
     uart_puts((char *)"AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"\r");
     _delay_cycles(1*16000000);
 
-    uart_puts((char *)"AT+SAPBR=3,1,\"APN\",\"internet\"\r");
+    uart_puts((char *)"AT+SAPBR=3,1,\"APN\",\"airtelgprs.com\"\r");
     _delay_cycles(1*16000000);
 
     uart_puts((char *)"AT+SAPBR=1,1\r");
@@ -168,7 +163,7 @@ void to_from_server (void){
     uart_puts((char *)"AT+HTTPINIT\r");
     _delay_cycles(1*16000000);
 
-    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://thingsdata.co.in/Tracker/action2.php?GPGGA=");
+    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://bb106509.ngrok.io/Tracker/action2.php?GPGGA=");
     uart_puts((char *)gps_string);
     uart_puts((char *)"\"\r");
     _delay_cycles(1*16000000);
@@ -204,64 +199,51 @@ void to_from_server (void){
 
 int main(void)
 {
-    WDTCTL = WDTPW + WDTHOLD; 			//Stop WDT
-    BCSCTL1 = CALBC1_8MHZ; 				//Set DCO to 8Mhz
-    DCOCTL = CALDCO_8MHZ; 				//Set DCO to 8Mhz
+    WDTCTL = WDTPW + WDTHOLD; 			    // Stop WDT      
+    BCSCTL1 = CALBC1_8MHZ; 					// Set DCO to 8Mhz
+    DCOCTL = CALDCO_8MHZ; 					// Set DCO to 8Mhz
 
-    uart_init();						//Initialize the UART connection
+    uart_init();							//Initialize the UART connection
 
-    __enable_interrupt();				//Interrupts Enabled
-
+    __enable_interrupt();					//Interrupts Enabled
+	
     uart_puts((char *)"AT\r");
     _delay_cycles(1*16000000);
 
     uart_puts((char *)"AT+CGNSPWR=1\r");
-    _delay_cycles(15*16000000);
-
-    uart_puts((char *)"AT\r");
     _delay_cycles(1*16000000);
 
-    ConfigTimerA2();
+    _delay_cycles(30*16000000);
+    
+    										
+    WDTCTL = WDTPW + ~WDTHOLD; 				// Releasing The WatchDog Timer.
+	WDTCTL = WDTPW + WDTCONFIG1;			// Configure and Clear Watchdog Timer.
+    WDTCTL = WDTPW + WDTTMSEL ; 			// Puts in interval time mode
+    IE1 |= WDTIE;               	        // Enable WDT interrupt  	
+    _BIS_SR(GIE);						    // GIE bit is always in SR register
 
-    __bis_SR_register(GIE);
-
-   while(1){
-
-	   if (execute == 1)
-	   {
-		   TACTL = MC_0;
-		   uart_puts((char *)"AT\r");
-		   _delay_cycles(1*16000000);
-		   execute = 0;
-		   TACTL = TASSEL_1 + MC_2;
-
-	   }
-   }
-
+    while (1)
+    {   WDTCTL = WDTPW + WDTCONFIG1;
+    	get_gps();
+    	to_from_server();
+    	WDTCTL = WDTPW + WDTCONFIG1;
+    	send_sms();
+    	_delay_cycles(1*16000000);
+    }
 
 }
 
-void ConfigTimerA2(void)
-  {
-	CCTL0 = CCIE;                            // CCR0 interrupt enabled
+#pragma vector = WDT_VECTOR  				//Interrupt Vector called in Every 1.024 s
+__interrupt void watchdog_timer(void) {   
+ 
+	count_ISR ++ ;
+	
+	if(count_ISR >= 75) 
+	    {  
+		   WDTCTL = WDTCTL;
+     	}
 
-	  CCR0 = 10000;
-
-	  TACTL = TASSEL_1 + MC_2;                 // SMCLK, contmode
-
-  }
-
-#pragma vector=TIMER0_A0_VECTOR
-__interrupt void Timer_A (void)
-{
-	TACTL = MC_0;
-	execute = 1;
-	CCR0 +=50000;								// add 12 seconds to the timer
-	TACTL = TASSEL_1 + MC_2;
 }
-
-
-
 #pragma vector = USCIAB0TX_VECTOR		//UART TX USCI Interrupt
 __interrupt void USCI0TX_ISR(void)
 {
@@ -289,3 +271,4 @@ RMC : Time, date, position, course and speed data. Recommended Minimum Navigatio
 VTG : Course and speed information relative to the ground.
 
 */
+
