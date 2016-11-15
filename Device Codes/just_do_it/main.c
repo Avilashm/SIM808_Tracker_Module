@@ -4,7 +4,7 @@
 #define LED BIT0
 #define RXD BIT1
 #define TXD BIT2
-#define WDTCONFIG1 = (WDTCNTCL|WDTSSEL|WDTIS1) 		//Clearing Mode
+#define WDTCONFIG1 (WDTCNTCL|WDTSSEL|WDTIS1) 		//Clearing Mode
 
 volatile unsigned int tx_flag;			//Mailbox Flag for the tx_char.
 volatile unsigned char tx_char;			//This char is the most current char to go into the UART
