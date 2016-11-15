@@ -165,6 +165,9 @@ void to_from_server (void){
     uart_puts((char *)"AT+SAPBR=3,1,\"APN\",\"airtelgprs.com\"\r");
     _delay_cycles(1*16000000);
 
+    uart_puts((char *)"AT+SAPBR=1,1\r");
+       _delay_cycles(1*16000000);
+
      uart_puts((char *)"AT+HTTPINIT\r");
     _delay_cycles(1*16000000);
 
