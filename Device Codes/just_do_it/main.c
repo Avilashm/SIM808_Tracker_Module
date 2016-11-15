@@ -2,9 +2,12 @@
 #include <string.h>
 
 #define LED BIT0
+#define LED2 BIT6
 #define RXD BIT1
 #define TXD BIT2
-#define WDTCONFIG1 (WDTCNTCL|WDTSSEL|WDTIS1) 		//Clearing Mode
+
+
+//All credit to http://longhornengineer.com/code/MSP430/UART/ for init and uart handling
 
 volatile unsigned int tx_flag;			//Mailbox Flag for the tx_char.
 volatile unsigned char tx_char;			//This char is the most current char to go into the UART
@@ -15,7 +18,11 @@ char server_resp[100];
 char c;
 char mob_no[16];
 char msg[75];
-int count_ISR = 0;
+int count = 0;
+int just_do_it = 1;
+
+void ConfigTimerA2(void);
+
 
 void uart_init(void)
 {
@@ -145,7 +152,9 @@ void get_gps(void)
 
 void to_from_server (void){
 
-    uart_puts((char *)"AT\r");
+	just_do_it=0;
+
+	uart_puts((char *)"AT\r");
     _delay_cycles(1*16000000);
 
     uart_puts((char *)"AT+CGATT=1\r");
@@ -154,16 +163,16 @@ void to_from_server (void){
     uart_puts((char *)"AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"\r");
     _delay_cycles(1*16000000);
 
-    uart_puts((char *)"AT+SAPBR=3,1,\"APN\",\"internet\"\r");
+    uart_puts((char *)"AT+SAPBR=3,1,\"APN\",\"airtelgprs.com\"\r");
     _delay_cycles(1*16000000);
 
     uart_puts((char *)"AT+SAPBR=1,1\r");
+       _delay_cycles(1*16000000);
+
+     uart_puts((char *)"AT+HTTPINIT\r");
     _delay_cycles(1*16000000);
 
-    uart_puts((char *)"AT+HTTPINIT\r");
-    _delay_cycles(1*16000000);
-
-    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://77140a25.ngrok.io/Tracker/action2.php?GPGGA=");
+    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://3c30a59f.ngrok.io/Tracker/action2.php?GPGGA=");
     uart_puts((char *)gps_string);
     uart_puts((char *)"\"\r");
     _delay_cycles(1*16000000);
@@ -171,7 +180,11 @@ void to_from_server (void){
     uart_puts((char *)"AT+HTTPACTION=0\r");
     _delay_cycles(4*16000000);
 
+    ConfigTimerA2();
+    __enable_interrupt();
+
     uart_puts((char *)"AT+HTTPREAD\r");
+
 
 
     int idx = 0;
@@ -193,60 +206,79 @@ void to_from_server (void){
     	}
     	idx++;
     }
-
+    count = 0;
+    TACTL = MC_0;
 }
 
 
 int main(void)
 {
-    WDTCTL = WDTPW + WDTHOLD; 			    // Stop WDT      
-    BCSCTL1 = CALBC1_8MHZ; 					// Set DCO to 8Mhz
-    DCOCTL = CALDCO_8MHZ; 					// Set DCO to 8Mhz
+    WDTCTL = WDTPW + WDTHOLD; 			//Stop WDT
+    BCSCTL1 = CALBC1_8MHZ; 				//Set DCO to 8Mhz
+    DCOCTL = CALDCO_8MHZ; 				//Set DCO to 8Mhz
 
-    uart_init();							//Initialize the UART connection
+    just_do_it = 1;
 
-    __enable_interrupt();					//Interrupts Enabled
-	
+    P1DIR |= LED2;
+    P1OUT |= LED2;
+
+    uart_init();						//Initialize the UART connection
+
+    __enable_interrupt();				//Interrupts Enabled
+
     uart_puts((char *)"AT\r");
     _delay_cycles(1*16000000);
 
     uart_puts((char *)"AT+CGNSPWR=1\r");
+    _delay_cycles(15*16000000);
+
+    uart_puts((char *)"AT\r");
     _delay_cycles(1*16000000);
 
-    _delay_cycles(30*16000000);
-    
-    										
-    WDTCTL |= WDTPW;
-    WDTCTL &= ~WDTHOLD; 				// Releasing The WatchDog Timer.
-	WDTCTL = WDTPW + WDTCONFIG1;			// Configure and Clear Watchdog Timer.
-    WDTCTL = WDTPW + WDTTMSEL ; 			// Puts in interval time mode
-    IE1 |= WDTIE;               	        // Enable WDT interrupt  	
-    _BIS_SR(GIE);						    // GIE bit is always in SR register
+    ConfigTimerA2();
 
-    while (1)
-    {   WDTCTL = WDTPW + WDTCONFIG1;
-        count_ISR = 0;
-    	get_gps();
-    	to_from_server();
-    	WDTCTL = WDTPW + WDTCONFIG1;
-        count_ISR = 0;
-    	send_sms();
-    	_delay_cycles(1*16000000);
-    }
+    __bis_SR_register(GIE);
+
 
 }
 
-#pragma vector = WDT_VECTOR  				//Interrupt Vector called in Every 1.024 s
-__interrupt void watchdog_timer(void) {   
- 
-	count_ISR ++ ;
-	
-	if(count_ISR >= 75) 
-	    {  
-		   WDTCTL = WDTCTL;
-        	}
+void ConfigTimerA2(void)
+  {
+	CCTL0 = CCIE;                            // CCR0 interrupt enabled
 
+	  CCR0 = 10000;
+
+	  TACTL = TASSEL_1 + MC_2;                 // SMCLK, contmode
+
+  }
+
+#pragma vector=TIMER0_A0_VECTOR
+__interrupt void Timer_A (void)
+{
+	P1OUT |= LED2;
+	TACTL = MC_0;
+	count ++;
+	__enable_interrupt();
+	if ((count % 20 == 0) && (just_do_it==1))
+	{   P1OUT |= LED2;
+		get_gps();
+		to_from_server();
+		send_sms();
+		count =  0;
+		just_do_it = 1;
+	}
+	if (count >= 60)
+	{   P1OUT ^= LED2;
+	    P1OUT ^= LED;
+		WDTCTL = 0xDEAD;
+	}
+
+	CCR0 +=10000;								// add 10 seconds to the timer
+	TACTL = TASSEL_1 + MC_2;
 }
+
+
+
 #pragma vector = USCIAB0TX_VECTOR		//UART TX USCI Interrupt
 __interrupt void USCI0TX_ISR(void)
 {
