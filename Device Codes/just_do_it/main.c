@@ -17,7 +17,8 @@ char server_resp[100];
 char c;
 char mob_no[16];
 char msg[75];
-unsigned int execute = 0;
+int count = 0;
+int just_do_it = 1;
 
 void ConfigTimerA2(void);
 
@@ -150,7 +151,9 @@ void get_gps(void)
 
 void to_from_server (void){
 
-    uart_puts((char *)"AT\r");
+	just_do_it=0;
+
+	uart_puts((char *)"AT\r");
     _delay_cycles(1*16000000);
 
     uart_puts((char *)"AT+CGATT=1\r");
@@ -159,16 +162,13 @@ void to_from_server (void){
     uart_puts((char *)"AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"\r");
     _delay_cycles(1*16000000);
 
-    uart_puts((char *)"AT+SAPBR=3,1,\"APN\",\"internet\"\r");
+    uart_puts((char *)"AT+SAPBR=3,1,\"APN\",\"airtelgprs.com\"\r");
     _delay_cycles(1*16000000);
 
-    uart_puts((char *)"AT+SAPBR=1,1\r");
+     uart_puts((char *)"AT+HTTPINIT\r");
     _delay_cycles(1*16000000);
 
-    uart_puts((char *)"AT+HTTPINIT\r");
-    _delay_cycles(1*16000000);
-
-    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://thingsdata.co.in/Tracker/action2.php?GPGGA=");
+    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://f57102cc.ngrok.io/Tracker/action2.php?GPGGA=");
     uart_puts((char *)gps_string);
     uart_puts((char *)"\"\r");
     _delay_cycles(1*16000000);
@@ -176,7 +176,11 @@ void to_from_server (void){
     uart_puts((char *)"AT+HTTPACTION=0\r");
     _delay_cycles(4*16000000);
 
+    ConfigTimerA2();
+    __enable_interrupt();
+
     uart_puts((char *)"AT+HTTPREAD\r");
+
 
 
     int idx = 0;
@@ -198,7 +202,8 @@ void to_from_server (void){
     	}
     	idx++;
     }
-
+    count = 0;
+    TACTL = MC_0;
 }
 
 
@@ -207,6 +212,8 @@ int main(void)
     WDTCTL = WDTPW + WDTHOLD; 			//Stop WDT
     BCSCTL1 = CALBC1_8MHZ; 				//Set DCO to 8Mhz
     DCOCTL = CALDCO_8MHZ; 				//Set DCO to 8Mhz
+
+    just_do_it = 1;
 
     uart_init();						//Initialize the UART connection
 
@@ -225,19 +232,6 @@ int main(void)
 
     __bis_SR_register(GIE);
 
-   while(1){
-
-	   if (execute == 1)
-	   {
-		   TACTL = MC_0;
-		   uart_puts((char *)"AT\r");
-		   _delay_cycles(1*16000000);
-		   execute = 0;
-		   TACTL = TASSEL_1 + MC_2;
-
-	   }
-   }
-
 
 }
 
@@ -255,8 +249,22 @@ void ConfigTimerA2(void)
 __interrupt void Timer_A (void)
 {
 	TACTL = MC_0;
-	execute = 1;
-	CCR0 +=50000;								// add 12 seconds to the timer
+	count ++;
+	__enable_interrupt();
+	if ((count % 20 == 0) && (just_do_it==1))
+	{
+		get_gps();
+		to_from_server();
+		send_sms();
+		count =  0;
+		just_do_it = 1;
+	}
+	if (count >= 60)
+	{
+		WDTCTL = 0xDEAD;
+	}
+
+	CCR0 +=10000;								// add 10 seconds to the timer
 	TACTL = TASSEL_1 + MC_2;
 }
 
