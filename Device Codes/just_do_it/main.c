@@ -2,7 +2,6 @@
 #include <string.h>
 
 #define LED BIT0
-#define LED2 BIT6
 #define RXD BIT1
 #define TXD BIT2
 
@@ -15,6 +14,7 @@ volatile unsigned int rx_flag;			//Mailbox Flag for the rx_char.
 volatile unsigned char rx_char;			//This char is the most current char to come out of the UART
 char gps_string[100];
 char server_resp[100];
+char server_code[100];
 char c;
 char mob_no[16];
 char msg[75];
@@ -172,22 +172,41 @@ void to_from_server (void){
      uart_puts((char *)"AT+HTTPINIT\r");
     _delay_cycles(1*16000000);
 
-    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://3c30a59f.ngrok.io/Tracker/action2.php?GPGGA=");
+    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://158e1b23.ngrok.io/Tracker/action2.php?GPGGA=");
     uart_puts((char *)gps_string);
     uart_puts((char *)"\"\r");
     _delay_cycles(1*16000000);
 
+    int idx = 0;
+
     uart_puts((char *)"AT+HTTPACTION=0\r");
-    _delay_cycles(4*16000000);
+
+    while(c = uart_getc()){
+
+    	if ( idx == 0 && c != '+' ){ continue; }
+    	if ( c == ':')
+    	{
+    		server_resp[idx+1] = '\0';
+    		idx = 0;
+    		uart_putline(server_code);
+    		uart_puts((char *)"\r");
+    		break;
+    	}
+    	else
+    	{
+    		server_code[idx] = c;
+    	}
+    	idx++;
+    }
 
     ConfigTimerA2();
     __enable_interrupt();
 
+    idx = 0;
+
     uart_puts((char *)"AT+HTTPREAD\r");
 
 
-
-    int idx = 0;
 
     while(c = uart_getc()){
 
@@ -218,9 +237,6 @@ int main(void)
     DCOCTL = CALDCO_8MHZ; 				//Set DCO to 8Mhz
 
     just_do_it = 1;
-
-    P1DIR |= LED2;
-    P1OUT |= LED2;
 
     uart_init();						//Initialize the UART connection
 
@@ -255,21 +271,19 @@ void ConfigTimerA2(void)
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void Timer_A (void)
 {
-	P1OUT |= LED2;
 	TACTL = MC_0;
 	count ++;
 	__enable_interrupt();
-	if ((count % 20 == 0) && (just_do_it==1))
-	{   P1OUT |= LED2;
+	if ((count % 10 == 0) && (just_do_it==1))
+	{
 		get_gps();
 		to_from_server();
 		send_sms();
 		count =  0;
 		just_do_it = 1;
 	}
-	if (count >= 60)
-	{   P1OUT ^= LED2;
-	    P1OUT ^= LED;
+	if (count >= 30)
+	{
 		WDTCTL = 0xDEAD;
 	}
 
@@ -306,4 +320,3 @@ RMC : Time, date, position, course and speed data. Recommended Minimum Navigatio
 VTG : Course and speed information relative to the ground.
 
 */
-
