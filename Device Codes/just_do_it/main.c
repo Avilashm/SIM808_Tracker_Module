@@ -7,7 +7,6 @@
 #define TXD BIT2
 
 
-//All credit to http://longhornengineer.com/code/MSP430/UART/ for init and uart handling
 
 volatile unsigned int tx_flag;			//Mailbox Flag for the tx_char.
 volatile unsigned char tx_char;			//This char is the most current char to go into the UART
@@ -15,6 +14,7 @@ volatile unsigned int rx_flag;			//Mailbox Flag for the rx_char.
 volatile unsigned char rx_char;			//This char is the most current char to come out of the UART
 char gps_string[100];
 char server_resp[100];
+char server_code[100];
 char c;
 char mob_no[16];
 char msg[75];
@@ -163,7 +163,7 @@ void to_from_server (void){
     uart_puts((char *)"AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"\r");
     _delay_cycles(1*16000000);
 
-    uart_puts((char *)"AT+SAPBR=3,1,\"APN\",\"airtelgprs.com\"\r");
+    uart_puts((char *)"AT+SAPBR=3,1,\"APN\",\"internet\"\r");
     _delay_cycles(1*16000000);
 
     uart_puts((char *)"AT+SAPBR=1,1\r");
@@ -172,28 +172,45 @@ void to_from_server (void){
      uart_puts((char *)"AT+HTTPINIT\r");
     _delay_cycles(1*16000000);
 
-<<<<<<< HEAD
-    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://f57102cc.ngrok.io/Tracker/action2.php?GPGGA=");
-=======
-    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://3c30a59f.ngrok.io/Tracker/action2.php?GPGGA=");
->>>>>>> Testing_WDT
+    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://thingsdata.co.in/Tracker/action2.php?GPGGA=");
     uart_puts((char *)gps_string);
     uart_puts((char *)"\"\r");
     _delay_cycles(1*16000000);
 
+    int idx = 0;
+
     uart_puts((char *)"AT+HTTPACTION=0\r");
-    _delay_cycles(4*16000000);
+
+    while(c = uart_getc()){
+
+    	if ( idx == 0 && c != '+' ){ continue; }
+    	if ( c == ':')
+    	{
+    		server_resp[idx+1] = '\0';
+    		idx = 0;
+    		uart_putline(server_code);
+    		uart_puts((char *)"\r");
+    		break;
+    	}
+    	else
+    	{
+    		server_code[idx] = c;
+    	}
+    	idx++;
+    }
 
     ConfigTimerA2();
     __enable_interrupt();
+
+    idx = 0;
 
     uart_puts((char *)"AT+HTTPREAD\r");
 
 
 
-    int idx = 0;
-
     while(c = uart_getc()){
+
+    	P1OUT ^= LED2;
 
     	if ( idx == 0 && c != '$' ){ continue; }
     	if ( c == 'Z')
@@ -221,14 +238,10 @@ int main(void)
     BCSCTL1 = CALBC1_8MHZ; 				//Set DCO to 8Mhz
     DCOCTL = CALDCO_8MHZ; 				//Set DCO to 8Mhz
 
+    P1DIR |= LED2;
+
     just_do_it = 1;
 
-<<<<<<< HEAD
-=======
-    P1DIR |= LED2;
-    P1OUT |= LED2;
-
->>>>>>> Testing_WDT
     uart_init();						//Initialize the UART connection
 
     __enable_interrupt();				//Interrupts Enabled
@@ -262,29 +275,24 @@ void ConfigTimerA2(void)
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void Timer_A (void)
 {
-	P1OUT |= LED2;
+
+
+	P1OUT ^= LED2;
+
 	TACTL = MC_0;
 	count ++;
 	__enable_interrupt();
-	if ((count % 20 == 0) && (just_do_it==1))
-<<<<<<< HEAD
+	if ((count % 10 == 0) && (just_do_it==1))
 	{
-=======
-	{   P1OUT |= LED2;
->>>>>>> Testing_WDT
 		get_gps();
 		to_from_server();
 		send_sms();
 		count =  0;
 		just_do_it = 1;
+    	P1OUT ^= LED2;
 	}
-	if (count >= 60)
-<<<<<<< HEAD
+	if (count >= 30)
 	{
-=======
-	{   P1OUT ^= LED2;
-	    P1OUT ^= LED;
->>>>>>> Testing_WDT
 		WDTCTL = 0xDEAD;
 	}
 
@@ -321,4 +329,3 @@ RMC : Time, date, position, course and speed data. Recommended Minimum Navigatio
 VTG : Course and speed information relative to the ground.
 
 */
-
