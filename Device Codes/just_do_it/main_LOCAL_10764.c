@@ -173,11 +173,7 @@ void to_from_server (void){
     _delay_cycles(1*16000000);
 
 <<<<<<< HEAD
-<<<<<<< HEAD
     uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://f57102cc.ngrok.io/Tracker/action2.php?GPGGA=");
-=======
-    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://3c30a59f.ngrok.io/Tracker/action2.php?GPGGA=");
->>>>>>> Testing_WDT
 =======
     uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://3c30a59f.ngrok.io/Tracker/action2.php?GPGGA=");
 >>>>>>> Testing_WDT
@@ -228,12 +224,6 @@ int main(void)
     just_do_it = 1;
 
 <<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    P1DIR |= LED2;
-    P1OUT |= LED2;
-
->>>>>>> Testing_WDT
 =======
     P1DIR |= LED2;
     P1OUT |= LED2;
@@ -278,11 +268,7 @@ __interrupt void Timer_A (void)
 	__enable_interrupt();
 	if ((count % 20 == 0) && (just_do_it==1))
 <<<<<<< HEAD
-<<<<<<< HEAD
 	{
-=======
-	{   P1OUT |= LED2;
->>>>>>> Testing_WDT
 =======
 	{   P1OUT |= LED2;
 >>>>>>> Testing_WDT
@@ -294,12 +280,7 @@ __interrupt void Timer_A (void)
 	}
 	if (count >= 60)
 <<<<<<< HEAD
-<<<<<<< HEAD
 	{
-=======
-	{   P1OUT ^= LED2;
-	    P1OUT ^= LED;
->>>>>>> Testing_WDT
 =======
 	{   P1OUT ^= LED2;
 	    P1OUT ^= LED;
