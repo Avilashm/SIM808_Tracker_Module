@@ -172,7 +172,7 @@ void to_from_server (void){
      uart_puts((char *)"AT+HTTPINIT\r");
     _delay_cycles(1*16000000);
 
-    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://158e1b23.ngrok.io/Tracker/action2.php?GPGGA=");
+    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://3c30a59f.ngrok.io//Tracker/action2.php?GPGGA=");
     uart_puts((char *)gps_string);
     uart_puts((char *)"\"\r");
     _delay_cycles(1*16000000);
