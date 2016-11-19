@@ -2,6 +2,7 @@
 #include <string.h>
 
 #define LED BIT0
+#define LED2 BIT6
 #define RXD BIT1
 #define TXD BIT2
 
@@ -171,7 +172,11 @@ void to_from_server (void){
      uart_puts((char *)"AT+HTTPINIT\r");
     _delay_cycles(1*16000000);
 
+<<<<<<< HEAD
     uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://f57102cc.ngrok.io/Tracker/action2.php?GPGGA=");
+=======
+    uart_puts((char *)"AT+HTTPPARA=\"URL\",\"http://3c30a59f.ngrok.io/Tracker/action2.php?GPGGA=");
+>>>>>>> Testing_WDT
     uart_puts((char *)gps_string);
     uart_puts((char *)"\"\r");
     _delay_cycles(1*16000000);
@@ -218,6 +223,12 @@ int main(void)
 
     just_do_it = 1;
 
+<<<<<<< HEAD
+=======
+    P1DIR |= LED2;
+    P1OUT |= LED2;
+
+>>>>>>> Testing_WDT
     uart_init();						//Initialize the UART connection
 
     __enable_interrupt();				//Interrupts Enabled
@@ -251,11 +262,16 @@ void ConfigTimerA2(void)
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void Timer_A (void)
 {
+	P1OUT |= LED2;
 	TACTL = MC_0;
 	count ++;
 	__enable_interrupt();
 	if ((count % 20 == 0) && (just_do_it==1))
+<<<<<<< HEAD
 	{
+=======
+	{   P1OUT |= LED2;
+>>>>>>> Testing_WDT
 		get_gps();
 		to_from_server();
 		send_sms();
@@ -263,7 +279,12 @@ __interrupt void Timer_A (void)
 		just_do_it = 1;
 	}
 	if (count >= 60)
+<<<<<<< HEAD
 	{
+=======
+	{   P1OUT ^= LED2;
+	    P1OUT ^= LED;
+>>>>>>> Testing_WDT
 		WDTCTL = 0xDEAD;
 	}
 
@@ -300,3 +321,4 @@ RMC : Time, date, position, course and speed data. Recommended Minimum Navigatio
 VTG : Course and speed information relative to the ground.
 
 */
+

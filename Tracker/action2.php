@@ -4,9 +4,9 @@ date_default_timezone_set("Asia/Kolkata");
 $GPGGA= (isset($_GET['GPGGA']) ? $_GET['GPGGA'] : null);
 
 $servername = "localhost"; 
-$username = "t********aroot";
-$password = "pa******2$";
-$db = "thingsdata";
+$username = "root";
+$password = "";
+$db = "trackerdb";
 
 $conn = new mysqli($servername, $username, $password,$db);
 
@@ -17,7 +17,7 @@ if ($conn->connect_error) {
 else {
     // echo " Connected   " ;
 }
-if(strlen($GPGGA) == 72) {
+if((strcspn($GPGGA,"E")==41)||(strcspn($GPGGA,"W")==41)) {
 
 $Time=substr($GPGGA,7,10);
 $x=substr($GPGGA,18,9);
